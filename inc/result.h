@@ -238,19 +238,19 @@ namespace result {
     using result_err_type_t = typename result_err_type<R>::type;
 
     struct ok_tag_t {
-      constexpr ok_tag_t() noexcept = default;
+      constexpr explicit ok_tag_t() noexcept = default;
     };
-    inline constexpr ok_tag_t ok_tag;
+    inline constexpr ok_tag_t ok_tag{};
 
     struct err_tag_t {
-      constexpr err_tag_t() noexcept = default;
+      constexpr explicit err_tag_t() noexcept = default;
     };
-    inline constexpr err_tag_t err_tag;
+    inline constexpr err_tag_t err_tag{};
 
     struct default_ctor_tag_t {
-      constexpr default_ctor_tag_t() noexcept = default;
+      constexpr explicit default_ctor_tag_t() noexcept = default;
     };
-    inline constexpr default_ctor_tag_t default_ctor_tag;
+    inline constexpr default_ctor_tag_t default_ctor_tag{};
 
     template<typename T,
       bool Enable = std::is_default_constructible_v<T> || std::is_void_v<T>>
