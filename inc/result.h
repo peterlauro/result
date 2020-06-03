@@ -1288,7 +1288,7 @@ namespace result {
     /**
      * \brief Transposes a Result of an Option into an Option of a Result
      * \return Ok(std::nullopt) will be mapped to std::nullopt;
-     *   Ok(std::optional(_)) and Err(_) will be mapped to std::optional(Ok(_)) and std::optional(Err(_)).
+     *   Ok(std::optional<T>) and Err(E) will be mapped to std::optional(Ok(T)) and std::optional(Err(E)).
      */
     template<typename U = T
       requires_T(std::is_same_v<U, T> && detail::is_optional_v<T>)>
