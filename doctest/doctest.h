@@ -3964,7 +3964,7 @@ namespace doctest {
           return res;
       // clang-format off
       DOCTEST_GCC_SUPPRESS_WARNING_WITH_PUSH("-Wcatch-value")
-        try {
+      try {
         throw;
       } catch (std::exception& ex) {
         return ex.what();

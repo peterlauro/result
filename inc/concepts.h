@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef __CONCEPTS_H
 #define __CONCEPTS_H
 
