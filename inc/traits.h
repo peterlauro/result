@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef __TRAITS_H
 #define __TRAITS_H
 

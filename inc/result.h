@@ -1,12 +1,11 @@
-#pragma once
-
 #ifndef __RESULT_H
 #define __RESULT_H
 
 #include "concepts.h"
+#include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <optional>
-#include <cstdlib>
 
 namespace result {
   namespace option_type {
@@ -858,12 +857,13 @@ namespace result {
      *   Otherwise, the Err value of result is returned in new Result<U, E>.
      * \remark This function can be used to compose the results of two functions.
      */
-    template<typename Func
-      requires_T(!std::is_void_v<T> && std::is_invocable_v<Func, T>)>
-    Result<std::invoke_result_t<Func, T>, E>
+    template<typename U = T,
+      typename Func
+      requires_T(std::is_same_v<T, U> && !std::is_void_v<U> && std::is_invocable_v<Func, U>)>
+    Result<std::invoke_result_t<Func, U>, E>
     map(Func&& op) const {
       if (is_ok()) {
-        return Ok(std::invoke(std::forward<Func>(op), storage.template get<T>()));
+        return Ok(std::invoke(std::forward<Func>(op), storage.template get<U>()));
       }
       return Err(storage.template get<E>());
     }
@@ -876,8 +876,9 @@ namespace result {
      *   Otherwise, the Err value of result is returned in new Result<U, E>.
      * \remark This function can be used to compose the results of two functions.
      */
-    template<typename Func
-      requires_T(std::is_void_v<T> && std::is_invocable_v<Func>)>
+    template<typename U = T,
+      typename Func
+      requires_T(std::is_same_v<T, U> && std::is_void_v<U> && std::is_invocable_v<Func>)>
     Result<std::invoke_result_t<Func>, E>
     map(Func&& op) const {
       if (is_ok()) {
@@ -913,12 +914,13 @@ namespace result {
      *   if you are passing the result of a function call,
      *   it is recommended to use map_or_else, which is lazily evaluated
      */
-    template<typename Func
-      requires_T(!std::is_void_v<T> && std::is_invocable_v<Func, T>)>
-    std::enable_if_t<!std::is_void_v<std::invoke_result_t<Func, T>>, std::invoke_result_t<Func, T>>
-    map_or(const traits::remove_cvref_t<std::invoke_result_t<Func, T>>& value, Func&& op) const {
+    template<typename U = T,
+      typename Func
+      requires_T(std::is_same_v<T, U> && !std::is_void_v<U> && std::is_invocable_v<Func, U>)>
+    std::enable_if_t<!std::is_void_v<std::invoke_result_t<Func, U>>, std::invoke_result_t<Func, U>>
+    map_or(const traits::remove_cvref_t<std::invoke_result_t<Func, U>>& value, Func&& op) const {
       if (is_ok()) {
-        return std::invoke(std::forward<Func>(op), storage.template get<T>());
+        return std::invoke(std::forward<Func>(op), storage.template get<U>());
       }
       return value;
     }
@@ -933,8 +935,9 @@ namespace result {
      *   if you are passing the result of a function call,
      *   it is recommended to use map_or_else, which is lazily evaluated
      */
-    template<typename Func
-      requires_T(std::is_void_v<T> && std::is_invocable_v<Func>)>
+    template<typename U = T,
+      typename Func
+      requires_T(std::is_same_v<U, T> && std::is_void_v<U> && std::is_invocable_v<Func>)>
     std::enable_if_t<!std::is_void_v<std::invoke_result_t<Func>>, std::invoke_result_t<Func>>
     map_or(const traits::remove_cvref_t<std::invoke_result_t<Func>>& value, Func&& op) const {
       if (is_ok()) {
@@ -952,16 +955,18 @@ namespace result {
      * \return if result is_ok, returns a result of "op", taking result's Ok value; otherwise it returns a result of "dop", taking result's Err value
      * \remark This function can be used to unpack a successful result while handling an error.
      */
-    template<typename Func,
+    template<typename U = T,
+      typename Func,
       typename DefaultFunc
       requires_T(
-        !std::is_void_v<T> &&
-        std::is_invocable_v<Func, T> &&
+        std::is_same_v<T, U> &&
+        !std::is_void_v<U> &&
+        std::is_invocable_v<Func, U> &&
         std::is_invocable_v<DefaultFunc, E>)>
-    std::enable_if_t<std::is_convertible_v<std::invoke_result_t<DefaultFunc, E>, std::invoke_result_t<Func, T>>, std::invoke_result_t<Func, T>>
+    std::enable_if_t<std::is_convertible_v<std::invoke_result_t<DefaultFunc, E>, std::invoke_result_t<Func, U>>, std::invoke_result_t<Func, U>>
     map_or_else(DefaultFunc&& dop, Func&& op) const {
       if (is_ok()) {
-        return std::invoke(std::forward<Func>(op), storage.template get<T>());
+        return std::invoke(std::forward<Func>(op), storage.template get<U>());
       }
       return std::invoke(std::forward<DefaultFunc>(dop), storage.template get<E>());
     }
@@ -975,10 +980,12 @@ namespace result {
      * \return if result is_ok, returns a result of "op", taking result's Ok value; otherwise it returns a result of "dop", taking result's Err value
      * \remark This function can be used to unpack a successful result while handling an error.
      */
-    template<typename Func,
+    template<typename U = T,
+      typename Func,
       typename DefaultFunc
       requires_T(
-        std::is_void_v<T> &&
+        std::is_same_v<U, T> &&
+        std::is_void_v<U> &&
         std::is_invocable_v<Func> &&
         std::is_invocable_v<DefaultFunc, E>)>
     std::enable_if_t<std::is_same_v<std::invoke_result_t<DefaultFunc, E>, std::invoke_result_t<Func>>, std::invoke_result_t<Func>>
@@ -1011,12 +1018,13 @@ namespace result {
      * \return if the result is Ok returns op result, otherwise returns the Err value of self.
      * \remark This function can be used for control flow based on result values.
      */
-    template<typename Func
-      requires_T(!std::is_void_v<T> && std::is_invocable_v<Func, T>)>
-    std::enable_if_t<is_result_v<std::invoke_result_t<Func, T>> && std::is_same_v<detail::result_err_type_t<std::invoke_result_t<Func, T>>, E>, std::invoke_result_t<Func, T>>
+    template<typename U = T,
+      typename Func
+      requires_T(std::is_same_v<T, U> && !std::is_void_v<U> && std::is_invocable_v<Func, U>)>
+    std::enable_if_t<is_result_v<std::invoke_result_t<Func, U>> && std::is_same_v<detail::result_err_type_t<std::invoke_result_t<Func, U>>, E>, std::invoke_result_t<Func, U>>
     and_then(Func&& op) const {
       if (is_ok()) {
-        return std::invoke(std::forward<Func>(op), storage.template get<T>());
+        return std::invoke(std::forward<Func>(op), storage.template get<U>());
       }
       return Err(storage.template get<E>());
     }
@@ -1028,8 +1036,9 @@ namespace result {
      * \return if the result is Ok returns op result, otherwise returns the Err value of self.
      * \remark This function can be used for control flow based on result values.
      */
-    template<typename Func
-      requires_T(std::is_void_v<T> && std::is_invocable_v<Func>)>
+    template<typename U = T,
+      typename Func
+      requires_T(std::is_same_v<U, T> && std::is_void_v<U> && std::is_invocable_v<Func>)>
     std::enable_if_t<is_result_v<std::invoke_result_t<Func>> && std::is_same_v<detail::result_err_type_t<std::invoke_result_t<Func>>, E>, std::invoke_result_t<Func>>
     and_then(Func&& op) const {
       if (is_ok()) {
