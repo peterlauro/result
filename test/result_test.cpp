@@ -34,7 +34,7 @@ auto generate_container = [](value_type start, value_type stop) -> result_type {
 };
 
 auto sum_container = [](container_type container)->value_type {
-  return std::reduce(std::begin(container), std::end(container));
+  return std::accumulate(std::begin(container), std::end(container), value_type{});
 };
 
 auto stringify = [](auto x) {
@@ -68,8 +68,8 @@ TEST_SUITE("ResultTests") {
     REQUIRE_FALSE(i.is_err());
 
     result::Result<double, ErrorCode> j = result::Ok<double>(3);
-    REQUIRE(x.is_ok());
-    REQUIRE_FALSE(x.is_err());
+    REQUIRE(j.is_ok());
+    REQUIRE_FALSE(j.is_err());
   }
 
   TEST_CASE("IsErrTest") {
@@ -105,13 +105,13 @@ TEST_SUITE("ResultTests") {
     REQUIRE_EQ(x.expect("Testing expect"), 2U);
 
     const result::Result<void, std::string> y = result::Ok();
-    REQUIRE_NOTHROW(x.expect("Testing expect"));
+    //there is no expect function of top of Result<T, E> where T is void
   }
 
   /*
   TEST_CASE("ExpectTerminatedTest") {
     const result::Result<uint32_t, std::string> x = result::Err("emergency failure"s);
-    EXPECT_EXIT(x.expect("Testing expect terminated"), ::testing::ExitedWithCode(3), "Testing expect terminated: emergency failure");
+    EXPECT_EXIT(x.expect("Testing expect terminated"), ::testing::ExitedWithCode(EXIT_FAILURE), "Testing expect terminated: emergency failure");
   }
   */
 
@@ -126,10 +126,10 @@ TEST_SUITE("ResultTests") {
   /*
   TEST_CASE("ExpectErrTerminatedTest") {
     const result::Result<uint32_t, std::string> x = result::Ok(42U);
-    EXPECT_EXIT(x.expect_err("Testing expect_err terminated"), ::testing::ExitedWithCode(3), "Testing expect_err terminated: 42");
+    EXPECT_EXIT(x.expect_err("Testing expect_err terminated"), ::testing::ExitedWithCode(EXIT_FAILURE), "Testing expect_err terminated: 42");
 
     const result::Result<void, std::string> y = result::Ok();
-    EXPECT_EXIT(x.expect_err("Testing expect_err terminated"), ::testing::ExitedWithCode(3), "Testing expect_err terminated");
+    EXPECT_EXIT(y.expect_err("Testing expect_err terminated"), ::testing::ExitedWithCode(EXIT_FAILURE), "Testing expect_err terminated");
   }
   */
   TEST_CASE("MapTest") {
@@ -299,12 +299,12 @@ TEST_SUITE("ResultTests") {
     REQUIRE_EQ(x.unwrap(), 2U);
 
     //const result::Result<uint32_t, std::string> y = result::Err("emergency failure"s);
-    //EXPECT_EXIT(static_cast<void>(y.unwrap()), ::testing::ExitedWithCode(3), "Attempting to unwrap an Err Result: emergency failure"); // panics with `emergency failure`
+    //EXPECT_EXIT(static_cast<void>(y.unwrap()), ::testing::ExitedWithCode(EXIT_FAILURE), "Attempting to unwrap an Err Result: emergency failure"); // panics with `emergency failure`
   }
 
   TEST_CASE("UnwrapErrTest") {
     //const result::Result<uint32_t, std::string> x = result::Ok(2U);
-    //EXPECT_EXIT(static_cast<void>(x.unwrap_err()), ::testing::ExitedWithCode(3), "Attempting to unwrap_err an Ok Result: 2"); // panics
+    //EXPECT_EXIT(static_cast<void>(x.unwrap_err()), ::testing::ExitedWithCode(EXIT_FAILURE), "Attempting to unwrap_err an Ok Result: 2"); // panics
 
     const result::Result<uint32_t, std::string> y = result::Err("emergency failure"s);
     REQUIRE_EQ(y.unwrap_err(), "emergency failure");
@@ -328,7 +328,7 @@ TEST_SUITE("ResultTests") {
   }
 
   TEST_CASE("UnwrapOrElseTest") {
-    const result::Result<size_t, std::string> x = result::Ok(2ULL);
+    const result::Result<size_t, std::string> x = result::Ok(static_cast<size_t>(2U));
     REQUIRE_EQ(x.unwrap_or_else(string_length), 2ULL);
 
     const result::Result<size_t, std::string> y = result::Err("foo"s);
@@ -377,8 +377,8 @@ TEST_SUITE("ResultTests") {
 
     //result::Result<type_with_non_default_ctor, int> x1; //it should not compile
     const result::Result<type_with_non_default_ctor, int> x2 = result::Ok(type_with_non_default_ctor(5));
-    const auto lval = type_with_non_default_ctor(3);
-    const result::Result<type_with_non_default_ctor, int> x3 = result::Ok(lval);
+    const auto lvalue = type_with_non_default_ctor(3);
+    const result::Result<type_with_non_default_ctor, int> x3 = result::Ok(lvalue);
     REQUIRE(x3.is_ok());
     const auto x3_val = x3.unwrap();
     REQUIRE_EQ(x3_val.i, 3);
