@@ -40,6 +40,60 @@ namespace traits {
     return static_cast<std::underlying_type_t<E>>(enumerator);
   }
 
+  /**
+   * \brief Checks whether type T is type of Template with type template parameters
+   * \tparam T the type to check
+   * \tparam Template the template type
+   */
+  template<typename T, template <typename...> class Template>
+  struct is_template : std::false_type {
+  };
+
+  /**
+   * \brief Specialization of is_template<T, Template> when T is type of Template<Ts...>
+   * \tparam Template the template type
+   * \tparam Ts the template parameter pack of Template
+   * \note specialization when T is Template<Ts...>
+   */
+  template<template <typename...> class Template, typename... Ts>
+  struct is_template<Template<Ts...>, Template> : std::true_type {
+  };
+
+  /**
+   * \brief Helper variable template to check whether T is the same Template (template with type template parameter/s)
+   * \tparam T a type to check
+   * \tparam Template the template type
+   */
+  template<typename T, template <typename...> class Template>
+  inline constexpr bool is_template_v = is_template<T, Template>::value;
+
+  /**
+   * \brief Checks whether type T is type of Template with non-type template parameters
+   * \tparam T the type to check
+   * \tparam Template the template type
+   */
+  template<typename T, template <auto...> class Template>
+  struct is_non_type_template : std::false_type {
+  };
+
+  /**
+   * \brief Specialization of is_non_type_template<T, Template> when T is type of Template<Vs...>
+   * \tparam Template the template type
+   * \tparam Vs the non-type template parameter pack of Template
+   * \note specialization when T is Template<Vs...>
+   */
+  template<template <auto...> class Template, auto... Vs>
+  struct is_non_type_template<Template<Vs...>, Template> : std::true_type {
+  };
+
+  /**
+   * \brief Helper variable template to check whether T is the same Template (template with non-type template parameter/s)
+   * \tparam T a type to check
+   * \tparam Template the template type
+   */
+  template<typename T, template <auto...> class Template>
+  inline constexpr bool is_non_type_template_v = is_non_type_template<T, Template>::value;
+
   //
   //CXX 20
   //

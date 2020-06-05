@@ -146,16 +146,7 @@ namespace result {
    * \tparam R a type to check
    */
   template<typename R>
-  struct is_result : std::false_type {
-  };
-
-  /**
-   * \brief Specialization of is_result<R> when R is Result<T, E>
-   * \tparam T success value type
-   * \tparam E error value type
-   */
-  template<typename T, typename E>
-  struct is_result<Result<T, E>> : std::true_type {
+  struct is_result : traits::is_template<R, Result> {
   };
 
   /**
@@ -186,29 +177,6 @@ namespace result {
     decltype(::new(static_cast<void*>(nullptr)) T(std::declval<Args>()...)) {
       return ::new (static_cast<void*>(p)) T(std::forward<Args>(args)...);
     }
-
-    /**
-     * \brief Checks whether T is a std::optional type
-     * \tparam T a type to check
-     */
-    template<typename T>
-    struct is_optional : std::false_type {
-    };
-
-    /**
-     * \brief Specialization of is_optional<T> when T is type of std::optional<>
-     * \tparam T a type to check
-     */
-    template<typename T>
-    struct is_optional<std::optional<T>> : std::true_type {
-    };
-
-    /**
-     * \brief Helper variable template to check whether T is a std::optional<> type
-     * \tparam T a type to check
-     */
-    template<typename T>
-    inline constexpr bool is_optional_v = is_optional<T>::value;
 
     template<typename R>
     struct result_ok_type {
@@ -1291,7 +1259,7 @@ namespace result {
      *   Ok(std::optional<T>) and Err(E) will be mapped to std::optional(Ok(T)) and std::optional(Err(E)).
      */
     template<typename U = T
-      requires_T(std::is_same_v<U, T> && detail::is_optional_v<T>)>
+      requires_T(std::is_same_v<U, T> && traits::is_template_v<T, std::optional>)>
     [[nodiscard]]
     std::optional<Result<typename U::value_type, E>> transpose() const {
       if (is_ok()) {
