@@ -1,10 +1,21 @@
 language: cpp
 os: linux
 dist: bionic
-compiler: gcc
+
+matrix:
+  include:
+   - env: COMPILER=g++
+     compiler: gcc
+
+   - env: COMPILER=clang++
+     compiler: clang
+
+before_script:
+  - export CXX="${COMPILER}"
+  - ${CXX} --version
 
 script:
   - mkdir -p build && cd build
-  - cmake -DCMAKE_BUILD_TYPE=Debug ..
-  - cmake --build . --config Debug -- -j2
-  - ctest -j2 --output-on-failure
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${CXX} ..
+  - make clean && make -k
+  - ctest --output-on-failure
