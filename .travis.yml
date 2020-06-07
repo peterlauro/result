@@ -1,0 +1,10 @@
+language: cpp
+os: linux
+dist: bionic
+compiler: gcc
+
+script:
+  - mkdir -p build && cd build
+  - cmake -DCMAKE_BUILD_TYPE=Debug ..
+  - cmake --build . --config Debug -- -j2
+  - ctest -j2 --output-on-failure
