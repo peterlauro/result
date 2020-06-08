@@ -4,18 +4,16 @@ dist: bionic
 
 matrix:
   include:
-   - env: COMPILER=g++
-     compiler: gcc
+   - compiler: gcc
 
-   - env: COMPILER=clang++
-     compiler: clang
+   - compiler: clang
 
 before_script:
-  - export CXX="${COMPILER}"
   - ${CXX} --version
 
 script:
   - mkdir -p build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${CXX} ..
   - make clean && make -k
-  - ctest --output-on-failure
+  - cd test
+  - ctest -V --output-on-failure
