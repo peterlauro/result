@@ -13,7 +13,7 @@ before_script:
 
 script:
   - mkdir -p build && cd build
-  - cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=${CXX} ..
+  - cmake -DCMAKE_CXX_COMPILER=${CXX} ..
   - make clean && make -k
   - cd test
   - ctest -V --output-on-failure
