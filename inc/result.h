@@ -125,8 +125,8 @@ namespace result {
     typename Arg2,
     typename... Args>
   constexpr option_type::Err<E> Err(Arg1&& arg1, Arg2&& arg2, Args&&... args)
-  noexcept(noexcept(option_type::Ok<E>(std::declval<Arg1&&>(), std::declval<Arg2&&>(), std::declval<Args&&>()...))) {
-    return option_type::Err<E>(std::in_place, std::forward<Args>(args)...);
+  noexcept(noexcept(option_type::Err<E>(std::declval<Arg1&&>(), std::declval<Arg2&&>(), std::declval<Args&&>()...))) {
+    return option_type::Err<E>(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2), std::forward<Args>(args)...);
   }
 
   /**
@@ -1104,6 +1104,15 @@ namespace result {
       std::exit(EXIT_FAILURE);
     }
 
+    template<typename U = T
+      requires_T(std::is_void_v<U> && std::is_same_v<U, T>)>
+    void unwrap() {
+      if (is_err()) {
+        std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
+
     /**
      * \brief Returns the contained Err value
      * \return when Result is_err, returns the contained Err value;
@@ -1386,20 +1395,19 @@ namespace result {
   }
 }
 
+#if defined(__GNUC__) || defined(__clang__)
 /**
  * \brief
  * \remark http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0779r0.pdf
- * \note not supported yet
-#define TRY(...)                                                           \
-    ({                                                                     \
-         auto res = __VA_ARGS__;                                           \
-         if (res.is_err()) {                                               \
-             using E = result::detail::result_err_type_t<decltype(res)>;   \
-             return result::option_type::Err<E>(res.unwrap_err());         \
-         }                                                                 \
-         if constexpr(!std::is_void_v<result::detail::result_ok_type_t<decltype(res)>>) { \
-             res.unwrap();                                                 \
-         } \
-     })
-*/
+ */
+#define TRYX(...)                                      \
+  ({                                                   \
+    auto&& res = (__VA_ARGS__);                        \
+    if (res.is_err()) {                                \
+      return result::Err(std::move(res).unwrap_err()); \
+    }                                                  \
+    std::move(res).unwrap();                           \
+  })
+#endif
+
 #endif

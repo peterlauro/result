@@ -381,6 +381,101 @@ TEST(ResultTests, NonDefaultCtorTypeTest) {
   EXPECT_TRUE(x4.is_err());
 }
 
+#if defined(__GNUC__) || defined(__clang__)
+
+result::Result<uint32_t, uint32_t> return_ok(uint32_t x) {
+  return result::Ok(x);
+}
+
+result::Result<uint32_t, uint32_t> return_err(uint32_t x) {
+  return result::Err(x);
+};
+
+result::Result<uint32_t, uint32_t> func_ok(uint32_t val) {
+  const uint32_t val_ok = TRYX(return_ok(val));
+  return result::Ok(val_ok);
+}
+
+result::Result<uint32_t, uint32_t> func_err(uint32_t val) {
+  const uint32_t val_ok = TRYX(return_err(val));
+  return result::Ok(val_ok);
+}
+
+TEST(ResultTests, tryMacroOk) {
+  const auto retval = func_ok(2U);
+  EXPECT_TRUE(retval.is_ok());
+  EXPECT_EQ(retval.unwrap(), 2U);
+}
+
+TEST(ResultTests, tryMacroErr) {
+  const auto retval = func_err(10U);
+  EXPECT_TRUE(retval.is_err());
+  EXPECT_EQ(retval.unwrap_err(), 10U);
+}
+
+result::Result<void, uint32_t> return_void_ok() {
+  return result::Ok();
+}
+
+result::Result<void, uint32_t> return_void_err(uint32_t x) {
+  return result::Err(x);
+};
+
+result::Result<void, uint32_t> func_void_ok() {
+  TRYX(return_void_ok());
+  return result::Ok();
+}
+
+result::Result<uint32_t, uint32_t> func_void_err(uint32_t val) {
+  const uint32_t val_ok = TRYX(return_err(val));
+  return result::Ok(val_ok);
+}
+
+TEST(ResultTests, tryMacroOkOnVoid) {
+  const auto retval = func_void_ok();
+  EXPECT_TRUE(retval.is_ok());
+}
+
+TEST(ResultTests, tryMacroErrOnVoid) {
+  const auto retval = func_void_err(10U);
+  EXPECT_TRUE(retval.is_err());
+  EXPECT_EQ(retval.unwrap_err(), 10U);
+}
+
+struct type_with_no_copy_ctor_and_no_copy_assignment {
+  type_with_no_copy_ctor_and_no_copy_assignment() = default;
+  type_with_no_copy_ctor_and_no_copy_assignment(const type_with_no_copy_ctor_and_no_copy_assignment&) = delete;
+  type_with_no_copy_ctor_and_no_copy_assignment(type_with_no_copy_ctor_and_no_copy_assignment&&) = default;
+  type_with_no_copy_ctor_and_no_copy_assignment& operator=(const type_with_no_copy_ctor_and_no_copy_assignment&) = delete;
+  type_with_no_copy_ctor_and_no_copy_assignment& operator=(type_with_no_copy_ctor_and_no_copy_assignment&&) = default;
+  ~type_with_no_copy_ctor_and_no_copy_assignment() = default;
+  uint32_t ui;
+};
+
+template<typename CharT, typename Traits>
+std::basic_ostream<CharT, Traits>&
+operator<<(std::basic_ostream<CharT, Traits>& os, const type_with_no_copy_ctor_and_no_copy_assignment& val) {
+  os << val.ui;
+  return os;
+}
+
+result::Result<type_with_no_copy_ctor_and_no_copy_assignment, uint32_t> return_move_ok(uint32_t ui) {
+  return result::Ok(type_with_no_copy_ctor_and_no_copy_assignment{ui});
+}
+
+result::Result<type_with_no_copy_ctor_and_no_copy_assignment, uint32_t> func_move_ok(uint32_t ui) {
+  auto val_ok = TRYX(return_move_ok(ui));
+  return result::Ok(std::move(val_ok));
+}
+
+TEST(ResultTests, tryMacroMoveOk) {
+  const auto retval = func_move_ok(20U);
+  EXPECT_TRUE(retval.is_ok());
+  EXPECT_EQ(retval.unwrap().ui, 20U);
+}
+
+#endif
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
