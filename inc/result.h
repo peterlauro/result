@@ -1106,7 +1106,34 @@ namespace result {
 
     template<typename U = T
       requires_T(std::is_void_v<U> && std::is_same_v<U, T>)>
-    void unwrap() {
+    void unwrap() & {
+      if (is_err()) {
+        std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
+
+    template<typename U = T
+      requires_T(std::is_void_v<U>&& std::is_same_v<U, T>)>
+    void unwrap() const& {
+      if (is_err()) {
+        std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
+
+    template<typename U = T
+      requires_T(std::is_void_v<U>&& std::is_same_v<U, T>)>
+    void unwrap() && {
+      if (is_err()) {
+        std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+    }
+
+    template<typename U = T
+      requires_T(std::is_void_v<U>&& std::is_same_v<U, T>)>
+    void unwrap() const&& {
       if (is_err()) {
         std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
         std::exit(EXIT_FAILURE);
