@@ -464,7 +464,7 @@ result::Result<type_with_no_copy_ctor_and_no_copy_assignment, uint32_t> return_m
 }
 
 result::Result<type_with_no_copy_ctor_and_no_copy_assignment, uint32_t> func_move_ok(uint32_t ui) {
-  auto val_ok = TRYX(return_move_ok(ui));
+  auto val_ok = TRYX_MOVE(return_move_ok(ui));
   return result::Ok(std::move(val_ok));
 }
 
@@ -473,7 +473,7 @@ TEST(ResultTests, tryMacroMoveOk) {
   EXPECT_TRUE(retval.is_ok());
   EXPECT_EQ(retval.unwrap().ui, 20U);
 }
-/*
+
 struct type_with_no_move_ctor_and_no_move_assignment {
   type_with_no_move_ctor_and_no_move_assignment() = default;
   type_with_no_move_ctor_and_no_move_assignment(const type_with_no_move_ctor_and_no_move_assignment&) = default;
@@ -497,7 +497,7 @@ result::Result<type_with_no_move_ctor_and_no_move_assignment, uint32_t> return_c
 }
 
 result::Result<type_with_no_move_ctor_and_no_move_assignment, uint32_t> func_copy_ok(uint32_t ui) {
-  const auto val_ok = TRYX(return_copy_ok(ui));
+  const auto val_ok = TRYX_COPY(return_copy_ok(ui));
   return result::Ok(val_ok);
 }
 
@@ -506,7 +506,7 @@ TEST(ResultTests, tryMacroCopyOk) {
   EXPECT_TRUE(retval.is_ok());
   EXPECT_EQ(retval.unwrap().ui, 20U);
 }
-*/
+
 #endif
 
 int main(int argc, char** argv) {

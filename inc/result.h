@@ -83,7 +83,7 @@ namespace result {
     typename T,
     typename CleanT = std::decay_t<T>>
   constexpr option_type::Ok<CleanT> Ok(T&& val)
-  noexcept(noexcept(option_type::Ok<CleanT>(std::declval<T&&>()))) {
+  noexcept(noexcept(option_type::Ok<CleanT>(std::forward<T>(val)))) {
     return option_type::Ok<CleanT>(std::forward<T>(val));
   }
 
@@ -93,7 +93,7 @@ namespace result {
     typename Arg2,
     typename... Args>
   constexpr option_type::Ok<T> Ok(Arg1&& arg1, Arg2&& arg2, Args&&... args)
-  noexcept(noexcept(option_type::Ok<T>(std::declval<Arg1&&>(), std::declval<Arg2&&>(), std::declval<Args&&>()...))) {
+  noexcept(noexcept(option_type::Ok<T>(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2), std::forward<Args>(args)...))) {
     return option_type::Ok<T>(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2), std::forward<Args>(args)...);
   }
 
@@ -115,7 +115,7 @@ namespace result {
     typename E,
     typename CleanE = std::decay_t<E>>
   constexpr option_type::Err<CleanE> Err(E&& val)
-  noexcept(noexcept(option_type::Err<CleanE>(std::declval<E&&>()))) {
+  noexcept(noexcept(option_type::Err<CleanE>(std::forward<E>(val)))) {
     return option_type::Err<CleanE>(std::forward<E>(val));
   }
 
@@ -125,7 +125,7 @@ namespace result {
     typename Arg2,
     typename... Args>
   constexpr option_type::Err<E> Err(Arg1&& arg1, Arg2&& arg2, Args&&... args)
-  noexcept(noexcept(option_type::Err<E>(std::declval<Arg1&&>(), std::declval<Arg2&&>(), std::declval<Args&&>()...))) {
+  noexcept(noexcept(option_type::Err<E>(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2), std::forward<Args>(args)...))) {
     return option_type::Err<E>(std::forward<Arg1>(arg1), std::forward<Arg2>(arg2), std::forward<Args>(args)...);
   }
 
@@ -252,28 +252,32 @@ namespace result {
 
       constexpr Storage() : storage() {}
 
-      void construct(option_type::Ok<T>&& ok) noexcept(noexcept(detail::construct_at(static_cast<T*>(nullptr), std::move(std::declval<T>())))) {
-        detail::construct_at(reinterpret_cast<T*>(&storage), std::move(ok.value));
+      template<typename U = T,
+        typename = std::enable_if_t<std::is_same_v<T, U> && std::is_move_constructible_v<U>>>
+      void construct(option_type::Ok<U>&& ok) noexcept(noexcept(detail::construct_at(static_cast<U*>(nullptr), std::move(ok.value)))) {
+        detail::construct_at(reinterpret_cast<U*>(&storage), std::move(ok.value));
         initialized = true;
       }
 
-      void construct(const option_type::Ok<T>& ok) noexcept(noexcept(detail::construct_at(static_cast<T*>(nullptr), std::declval<T>()))) {
-        detail::construct_at(reinterpret_cast<T*>(&storage), ok.value);
+      template<typename U = T,
+        typename = std::enable_if_t<std::is_same_v<T, U> && std::is_copy_constructible_v<U>>>
+      void construct(const option_type::Ok<U>& ok) noexcept(noexcept(detail::construct_at(static_cast<U*>(nullptr), ok.value))) {
+        detail::construct_at(reinterpret_cast<U*>(&storage), ok.value);
         initialized = true;
       }
 
-      void construct(option_type::Err<E>&& err) noexcept(noexcept(detail::construct_at(static_cast<E*>(nullptr), std::move(std::declval<E>())))) {
+      void construct(option_type::Err<E>&& err) noexcept(noexcept(detail::construct_at(static_cast<E*>(nullptr), std::move(err.value)))) {
         detail::construct_at(reinterpret_cast<E*>(&storage), std::move(err.value));
         initialized = true;
       }
 
-      void construct(const option_type::Err<E>& err) noexcept(noexcept(detail::construct_at(static_cast<E*>(nullptr), std::declval<E>()))) {
+      void construct(const option_type::Err<E>& err) noexcept(noexcept(detail::construct_at(static_cast<E*>(nullptr), err.value))) {
         detail::construct_at(reinterpret_cast<E*>(&storage), err.value);
         initialized = true;
       }
 
       template<typename U, typename CleanU = std::decay_t<U>>
-      void raw_construct(U&& val) noexcept(noexcept(detail::construct_at(static_cast<CleanU*>(nullptr), std::declval<U&&>()))) {
+      void raw_construct(U&& val) noexcept(noexcept(detail::construct_at(static_cast<CleanU*>(nullptr), std::forward<U>(val)))) {
         detail::construct_at(reinterpret_cast<CleanU*>(&storage), std::forward<U>(val));
         initialized = true;
       }
@@ -334,18 +338,18 @@ namespace result {
         initialized = true;
       }
 
-      void construct(option_type::Err<E>&& err) noexcept(noexcept(detail::construct_at(static_cast<E*>(nullptr), std::move(std::declval<E>())))) {
+      void construct(option_type::Err<E>&& err) noexcept(noexcept(detail::construct_at(static_cast<E*>(nullptr), std::move(err.value)))) {
         detail::construct_at(reinterpret_cast<E*>(&storage), std::move(err.value));
         initialized = true;
       }
 
-      void construct(const option_type::Err<E>& err) noexcept(noexcept(detail::construct_at(static_cast<E*>(nullptr), std::declval<E>()))) {
+      void construct(const option_type::Err<E>& err) noexcept(noexcept(detail::construct_at(static_cast<E*>(nullptr), err.value))) {
         detail::construct_at(reinterpret_cast<E*>(&storage), err.value);
         initialized = true;
       }
 
       template<typename U, typename CleanU = std::decay_t<U>>
-      void raw_construct(U&& val) noexcept(noexcept(detail::construct_at(static_cast<CleanU*>(nullptr), std::declval<U&&>()))) {
+      void raw_construct(U&& val) noexcept(noexcept(detail::construct_at(static_cast<CleanU*>(nullptr), std::forward<U>(val)))) {
         if constexpr (!std::is_void_v<CleanU>) {
           detail::construct_at(reinterpret_cast<CleanU*>(&storage), std::forward<U>(val));
         }
@@ -393,19 +397,19 @@ namespace result {
 
     template<typename T, typename E>
     struct Storage_Ctrl final {
-      static void construct(const option_type::Ok<T>& ok, Storage<T, E>& dst) noexcept(noexcept(std::declval<Storage<T, E>&>().construct(std::declval<option_type::Ok<T>>()))) {
+      static void construct(const option_type::Ok<T>& ok, Storage<T, E>& dst) noexcept(noexcept(std::declval<Storage<T, E>&>().construct(ok))) {
         dst.construct(ok);
       }
 
-      static void construct(option_type::Ok<T>&& ok, Storage<T, E>& dst) noexcept(noexcept(std::declval<Storage<T, E>&>().construct(std::move(std::declval<option_type::Ok<T>>())))) {
+      static void construct(option_type::Ok<T>&& ok, Storage<T, E>& dst) noexcept(noexcept(std::declval<Storage<T, E>&>().construct(std::move(ok)))) {
         dst.construct(std::move(ok));
       }
 
-      static void construct(const option_type::Err<E>& err, Storage<T, E>& dst) noexcept(noexcept(std::declval<Storage<T, E>&>().construct(std::declval<option_type::Err<E>>()))) {
+      static void construct(const option_type::Err<E>& err, Storage<T, E>& dst) noexcept(noexcept(std::declval<Storage<T, E>&>().construct(err))) {
         dst.construct(err);
       }
 
-      static void construct(option_type::Err<E>&& err, Storage<T, E>& dst) noexcept(noexcept(std::declval<Storage<T, E>&>().construct(std::move(std::declval<option_type::Err<E>>())))) {
+      static void construct(option_type::Err<E>&& err, Storage<T, E>& dst) noexcept(noexcept(std::declval<Storage<T, E>&>().construct(std::move(err)))) {
         dst.construct(std::move(err));
       }
 
@@ -465,19 +469,19 @@ namespace result {
 
     template<typename E>
     struct Storage_Ctrl<void, E> final {
-      static void construct(const option_type::Ok<void>& ok, Storage<void, E>& dst) noexcept(noexcept(std::declval<Storage<void, E>&>().construct(std::declval<option_type::Ok<void>>()))) {
+      static void construct(const option_type::Ok<void>& ok, Storage<void, E>& dst) noexcept(noexcept(std::declval<Storage<void, E>&>().construct(ok))) {
         dst.construct(ok);
       }
 
-      static void construct(option_type::Ok<void>&& ok, Storage<void, E>& dst) noexcept(noexcept(std::declval<Storage<void, E>&>().construct(std::move(std::declval<option_type::Ok<void>>())))) {
+      static void construct(option_type::Ok<void>&& ok, Storage<void, E>& dst) noexcept(noexcept(std::declval<Storage<void, E>&>().construct(std::move(ok)))) {
         dst.construct(ok);
       }
 
-      static void construct(const option_type::Err<E>& err, Storage<void, E>& dst) noexcept(noexcept(std::declval<Storage<void, E>&>().construct(std::declval<option_type::Err<E>>()))) {
+      static void construct(const option_type::Err<E>& err, Storage<void, E>& dst) noexcept(noexcept(std::declval<Storage<void, E>&>().construct(err))) {
         dst.construct(err);
       }
 
-      static void construct(option_type::Err<E>&& err, Storage<void, E>& dst) noexcept(noexcept(std::declval<Storage<void, E>&>().construct(std::move(std::declval<option_type::Err<E>>())))) {
+      static void construct(option_type::Err<E>&& err, Storage<void, E>& dst) noexcept(noexcept(std::declval<Storage<void, E>&>().construct(std::move(err)))) {
         dst.construct(std::move(err));
       }
 
@@ -557,22 +561,41 @@ namespace result {
 
     constexpr Result() = default;
 
-    Result(const option_type::Ok<T>& ok) noexcept(noexcept(storage_ctrl::construct(std::declval<option_type::Ok<T>>(), std::declval<storage_type&>())))
+    template<typename U = T,
+      typename = std::enable_if_t<std::is_same_v<T, U> && !std::is_void_v<U> && std::is_copy_constructible_v<U>>>
+    Result(const option_type::Ok<U>& ok) noexcept(noexcept(storage_ctrl::construct(ok, std::declval<storage_type&>())))
       : ctor_base(detail::default_ctor_tag) {
       storage_ctrl::construct(ok, storage);
     }
 
-    Result(option_type::Ok<T>&& ok) noexcept(noexcept(storage_ctrl::construct(std::move(std::declval<option_type::Ok<T>>()), std::declval<storage_type&>())))
+    template<typename U = T,
+      typename = std::enable_if_t<std::is_same_v<T, U> && !std::is_void_v<U> && std::is_move_constructible_v<U>>>
+    Result(option_type::Ok<U>&& ok) noexcept(noexcept(storage_ctrl::construct(std::move(ok), std::declval<storage_type&>())))
       : ctor_base(detail::default_ctor_tag) {
       storage_ctrl::construct(std::move(ok), storage);
     }
 
-    Result(const option_type::Err<E>& err) noexcept(noexcept(storage_ctrl::construct(std::declval<option_type::Err<E>>(), std::declval<storage_type&>())))
+    template<typename U = T,
+      typename = std::enable_if_t<std::is_same_v<T, U> && std::is_void_v<U>>>
+    Result(const option_type::Ok<void>& ok) noexcept(noexcept(storage_ctrl::construct(ok, std::declval<storage_type&>())))
+      : ctor_base(detail::default_ctor_tag) {
+      storage_ctrl::construct(ok, storage);
+    }
+
+    template<typename U = T,
+      typename = std::enable_if_t<std::is_same_v<T, U> && std::is_void_v<U>>>
+    Result(option_type::Ok<void>&& ok) noexcept(noexcept(storage_ctrl::construct(std::move(ok), std::declval<storage_type&>())))
+      : ctor_base(detail::default_ctor_tag) {
+      storage_ctrl::construct(std::move(ok), storage);
+    }
+
+
+    Result(const option_type::Err<E>& err) noexcept(noexcept(storage_ctrl::construct(err, std::declval<storage_type&>())))
       : ctor_base(detail::default_ctor_tag), has_value(false) {
       storage_ctrl::construct(err, storage);
     }
 
-    Result(option_type::Err<E>&& err) noexcept(noexcept(storage_ctrl::construct(std::move(std::declval<option_type::Err<E>>()), std::declval<storage_type&>())))
+    Result(option_type::Err<E>&& err) noexcept(noexcept(storage_ctrl::construct(std::move(err), std::declval<storage_type&>())))
       : ctor_base(detail::default_ctor_tag), has_value(false) {
       storage_ctrl::construct(std::move(err), storage);
     }
@@ -1427,7 +1450,7 @@ namespace result {
  * \brief
  * \remark http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0779r0.pdf
  */
-#define TRYX(...)                                      \
+#define TRYX_MOVE(...)                                      \
   ({                                                   \
     auto&& res = (__VA_ARGS__);                        \
     if (res.is_err()) {                                \
@@ -1435,6 +1458,18 @@ namespace result {
     }                                                  \
     std::move(res).unwrap();                           \
   })
+
+#define TRYX_COPY(...)                                 \
+  ({                                                   \
+    auto&& res = (__VA_ARGS__);                        \
+    if (res.is_err()) {                                \
+      return result::Err(res.unwrap_err());            \
+    }                                                  \
+    res.unwrap();                                      \
+  })
+
+#define TRYX(...) TRYX_MOVE(__VA_ARGS__)
+
 #endif
 
 #endif
