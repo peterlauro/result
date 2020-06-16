@@ -46,7 +46,73 @@ auto string_length = [](const auto& str) { return str.length(); };
 auto sq = [](uint32_t x) -> result::Result<uint32_t, uint32_t> { return result::Ok(x * x); };
 auto error = [](uint32_t x) -> result::Result<uint32_t, uint32_t> { return result::Err(x); };
 
-TEST(ResultTests, TestIsOk) {
+struct type_with_no_copy_ctor_and_no_copy_assignment {
+  type_with_no_copy_ctor_and_no_copy_assignment() = default;
+  type_with_no_copy_ctor_and_no_copy_assignment(const type_with_no_copy_ctor_and_no_copy_assignment&) = delete;
+  type_with_no_copy_ctor_and_no_copy_assignment(type_with_no_copy_ctor_and_no_copy_assignment&&) = default;
+  type_with_no_copy_ctor_and_no_copy_assignment& operator=(const type_with_no_copy_ctor_and_no_copy_assignment&) = delete;
+  type_with_no_copy_ctor_and_no_copy_assignment& operator=(type_with_no_copy_ctor_and_no_copy_assignment&&) = default;
+  ~type_with_no_copy_ctor_and_no_copy_assignment() = default;
+  uint32_t ui;
+};
+
+template<typename CharT, typename Traits>
+std::basic_ostream<CharT, Traits>&
+operator<<(std::basic_ostream<CharT, Traits>& os, const type_with_no_copy_ctor_and_no_copy_assignment& val) {
+  os << val.ui;
+  return os;
+}
+
+struct type_with_no_move_ctor_and_no_move_assignment {
+  type_with_no_move_ctor_and_no_move_assignment() = default;
+  type_with_no_move_ctor_and_no_move_assignment(const type_with_no_move_ctor_and_no_move_assignment&) = default;
+  type_with_no_move_ctor_and_no_move_assignment(type_with_no_move_ctor_and_no_move_assignment&&) = delete;
+  type_with_no_move_ctor_and_no_move_assignment& operator=(const type_with_no_move_ctor_and_no_move_assignment&) = default;
+  type_with_no_move_ctor_and_no_move_assignment& operator=(type_with_no_move_ctor_and_no_move_assignment&&) = delete;
+  ~type_with_no_move_ctor_and_no_move_assignment() = default;
+  uint32_t ui;
+};
+
+template<typename CharT, typename Traits>
+std::basic_ostream<CharT, Traits>&
+operator<<(std::basic_ostream<CharT, Traits>& os, const type_with_no_move_ctor_and_no_move_assignment& val) {
+  os << val.ui;
+  return os;
+}
+
+TEST(ResultTests, TypeWithNoCopyCtorAndNoCopyAssignment) {
+  /*
+  type_with_no_copy_ctor_and_no_copy_assignment var1;
+  //type_with_no_copy_ctor_and_no_copy_assignment var2 = var1; //it should not compile
+  type_with_no_copy_ctor_and_no_copy_assignment var3;
+  var3 = var1; //it should not compile
+  */
+
+  //auto val = type_with_no_copy_ctor_and_no_copy_assignment{ 10U };
+  //const result::Result<type_with_no_copy_ctor_and_no_copy_assignment, uint32_t> x = result::Ok(val); //it should not compile
+  const result::Result<type_with_no_copy_ctor_and_no_copy_assignment, uint32_t> x = result::Ok(type_with_no_copy_ctor_and_no_copy_assignment{ 10U });
+  EXPECT_TRUE(x.is_ok());
+  //auto var = x.unwrap(); //it should not compile
+  EXPECT_EQ(x.unwrap().ui, 10U);
+}
+
+TEST(ResultTests, TypeWithNoMoveCtorAndNoMoveAssignment) {
+  /*
+  type_with_no_move_ctor_and_no_move_assignment var1;
+  //type_with_no_move_ctor_and_no_move_assignment var2 = std::move(var1); //it should not compile
+  type_with_no_move_ctor_and_no_move_assignment var3;
+  var3 = std::move(var1); //it should not compile
+  */
+
+  auto val = type_with_no_move_ctor_and_no_move_assignment{ 10U };
+  const result::Result<type_with_no_move_ctor_and_no_move_assignment, uint32_t> x = result::Ok(val);
+  //const result::Result<type_with_no_move_ctor_and_no_move_assignment, uint32_t> x = result::Ok(type_with_no_move_ctor_and_no_move_assignment{ 10U }); //it should not compile
+  EXPECT_TRUE(x.is_ok());
+  const type_with_no_move_ctor_and_no_move_assignment var = x.unwrap();
+  EXPECT_EQ(var.ui, 10U);
+}
+
+TEST(ResultTests, IsOk) {
   const result::Result<double, ErrorCode> x = result::Ok(3.14);
   EXPECT_TRUE(x.is_ok());
   EXPECT_FALSE(x.is_err());
@@ -312,7 +378,7 @@ TEST(ResultTests, UnwrapOr) {
     EXPECT_EQ(y.unwrap_or(value), value);
   }
 
-TEST(ResultTests, UnwrapOrDefaultTest) {
+TEST(ResultTests, UnwrapOrDefault) {
   const result::Result<uint32_t, std::string> x = result::Ok(9U);
   EXPECT_EQ(x.unwrap_or_default(), 9U);
 
@@ -320,7 +386,7 @@ TEST(ResultTests, UnwrapOrDefaultTest) {
   EXPECT_EQ(y.unwrap_or_default(), std::string());
 }
 
-TEST(ResultTests, UnwrapOrElseTest) {
+TEST(ResultTests, UnwrapOrElse) {
   const result::Result<size_t, std::string> x = result::Ok(static_cast<size_t>(2U));
   EXPECT_EQ(x.unwrap_or_else(string_length), 2ULL);
 
@@ -328,7 +394,7 @@ TEST(ResultTests, UnwrapOrElseTest) {
   EXPECT_EQ(y.unwrap_or_else(string_length), 3ULL);
 }
 
-TEST(ResultTests, ContainsTest) {
+TEST(ResultTests, Contains) {
   const result::Result<int, ErrorCode> x = result::Ok(5);
   EXPECT_TRUE(x.contains(5));
   EXPECT_FALSE(x.contains(4));
@@ -337,7 +403,7 @@ TEST(ResultTests, ContainsTest) {
   EXPECT_FALSE(x.contains(4));
 }
 
-TEST(ResultTests, ContainsErrTest) {
+TEST(ResultTests, ContainsErr) {
   const result::Result<int, ErrorCode> x = result::Ok(5);
   EXPECT_FALSE(x.contains_err(ErrorCode::ERROR_THREE));
 
@@ -346,7 +412,7 @@ TEST(ResultTests, ContainsErrTest) {
   EXPECT_FALSE(y.contains_err("other error"));
 }
 
-TEST(ResultTests, TransposeTest) {
+TEST(ResultTests, Transpose) {
   const result::Result<std::optional<int32_t>, std::string> x = result::Ok(std::make_optional(5));
   const std::optional<result::Result<int32_t, std::string>> y = std::make_optional<result::Result<int32_t, std::string>>(result::Ok(5));
   const auto t = x.transpose();
@@ -354,7 +420,7 @@ TEST(ResultTests, TransposeTest) {
   EXPECT_EQ(t, y);
 }
 
-TEST(ResultTests, NonDefaultCtorTypeTest) {
+TEST(ResultTests, NonDefaultCtorType) {
   struct type_with_non_default_ctor {
     explicit type_with_non_default_ctor(int v) : i(v) {
     }
@@ -442,23 +508,6 @@ TEST(ResultTests, tryMacroErrOnVoid) {
   EXPECT_EQ(retval.unwrap_err(), 10U);
 }
 
-struct type_with_no_copy_ctor_and_no_copy_assignment {
-  type_with_no_copy_ctor_and_no_copy_assignment() = default;
-  type_with_no_copy_ctor_and_no_copy_assignment(const type_with_no_copy_ctor_and_no_copy_assignment&) = delete;
-  type_with_no_copy_ctor_and_no_copy_assignment(type_with_no_copy_ctor_and_no_copy_assignment&&) = default;
-  type_with_no_copy_ctor_and_no_copy_assignment& operator=(const type_with_no_copy_ctor_and_no_copy_assignment&) = delete;
-  type_with_no_copy_ctor_and_no_copy_assignment& operator=(type_with_no_copy_ctor_and_no_copy_assignment&&) = default;
-  ~type_with_no_copy_ctor_and_no_copy_assignment() = default;
-  uint32_t ui;
-};
-
-template<typename CharT, typename Traits>
-std::basic_ostream<CharT, Traits>&
-operator<<(std::basic_ostream<CharT, Traits>& os, const type_with_no_copy_ctor_and_no_copy_assignment& val) {
-  os << val.ui;
-  return os;
-}
-
 result::Result<type_with_no_copy_ctor_and_no_copy_assignment, uint32_t> return_move_ok(uint32_t ui) {
   return result::Ok(type_with_no_copy_ctor_and_no_copy_assignment{ui});
 }
@@ -472,23 +521,6 @@ TEST(ResultTests, tryMacroMoveOk) {
   const auto retval = func_move_ok(20U);
   EXPECT_TRUE(retval.is_ok());
   EXPECT_EQ(retval.unwrap().ui, 20U);
-}
-
-struct type_with_no_move_ctor_and_no_move_assignment {
-  type_with_no_move_ctor_and_no_move_assignment() = default;
-  type_with_no_move_ctor_and_no_move_assignment(const type_with_no_move_ctor_and_no_move_assignment&) = default;
-  type_with_no_move_ctor_and_no_move_assignment(type_with_no_move_ctor_and_no_move_assignment&&) = delete;
-  type_with_no_move_ctor_and_no_move_assignment& operator=(const type_with_no_move_ctor_and_no_move_assignment&) = default;
-  type_with_no_move_ctor_and_no_move_assignment& operator=(type_with_no_move_ctor_and_no_move_assignment&&) = delete;
-  ~type_with_no_move_ctor_and_no_move_assignment() = default;
-  uint32_t ui;
-};
-
-template<typename CharT, typename Traits>
-std::basic_ostream<CharT, Traits>&
-operator<<(std::basic_ostream<CharT, Traits>& os, const type_with_no_move_ctor_and_no_move_assignment& val) {
-  os << val.ui;
-  return os;
 }
 
 result::Result<type_with_no_move_ctor_and_no_move_assignment, uint32_t> return_copy_ok(uint32_t ui) {
