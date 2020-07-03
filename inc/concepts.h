@@ -1,5 +1,7 @@
-#ifndef __CONCEPTS_H
-#define __CONCEPTS_H
+#pragma once
+
+#ifndef CONCEPTS_H
+#define CONCEPTS_H
 
 #include "traits.h"
 

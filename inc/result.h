@@ -1,5 +1,7 @@
-#ifndef __RESULT_H
-#define __RESULT_H
+#pragma once
+
+#ifndef RESULT_H
+#define RESULT_H
 
 #include "concepts.h"
 #include <cstdlib>
@@ -39,7 +41,7 @@ namespace result {
      * \brief The success value wrapper specialized for void type
      */
     template<>
-    struct Ok<void> {
+    struct Ok<void> final {
       using type = void;
     };
 
@@ -1249,7 +1251,7 @@ namespace result {
    */
   template<typename U = T
     requires_T(
-      !std::is_void_v<T> &&
+      !std::is_void_v<U> &&
       std::is_same_v<T, U> &&
       std::is_default_constructible_v<U> &&
       std::is_copy_constructible_v<T>)>
@@ -1286,7 +1288,7 @@ namespace result {
      */
     template<typename U = T
       requires_T(
-        !std::is_void_v<T> &&
+        !std::is_void_v<U> &&
         concepts::EqualityComparableWith<T, U>::value)>
     [[nodiscard]]
     bool contains(const U& value) const noexcept {

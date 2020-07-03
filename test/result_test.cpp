@@ -186,9 +186,11 @@ TEST(ResultTests, ExpectErr) {
 TEST(ResultTests, ExpectErrTerminated) {
   const result::Result<uint32_t, std::string> x = result::Ok(42U);
   EXPECT_EXIT(x.expect_err("Testing expect_err terminated"), ::testing::ExitedWithCode(EXIT_FAILURE), "Testing expect_err terminated: 42");
+}
 
-  const result::Result<void, std::string> y = result::Ok();
-  EXPECT_EXIT(y.expect_err("Testing expect_err terminated"), ::testing::ExitedWithCode(EXIT_FAILURE), "Testing expect_err terminated");
+TEST(ResultTests, ExpectErrTerminatedResultVoid) {
+  const result::Result<void, std::string> x = result::Ok();
+  EXPECT_EXIT(x.expect_err("Testing expect_err terminated"), ::testing::ExitedWithCode(EXIT_FAILURE), "Testing expect_err terminated");
 }
 
 TEST(ResultTests, Map) {
@@ -356,17 +358,21 @@ TEST(ResultTests, OrElse) {
 TEST(ResultTests, Unwrap) {
   const result::Result<uint32_t, std::string> x = result::Ok(2U);
   EXPECT_EQ(x.unwrap(), 2U);
+}
 
-  const result::Result<uint32_t, std::string> y = result::Err("emergency failure"s);
-  EXPECT_EXIT(static_cast<void>(y.unwrap()), ::testing::ExitedWithCode(EXIT_FAILURE), "Attempting to unwrap an Err Result: emergency failure"); // panics with `emergency failure`
+TEST(ResultTests, UnwrapTerminated) {
+  const result::Result<uint32_t, std::string> x = result::Err("emergency failure"s);
+  EXPECT_EXIT(static_cast<void>(x.unwrap()), ::testing::ExitedWithCode(EXIT_FAILURE), "Attempting to unwrap an Err Result: emergency failure"); // panics with `emergency failure`
+}
+
+TEST(ResultTests, UnwrapErrTerminated) {
+  const result::Result<uint32_t, std::string> x = result::Ok(2U);
+  EXPECT_EXIT(static_cast<void>(x.unwrap_err()), ::testing::ExitedWithCode(EXIT_FAILURE), "Attempting to unwrap_err an Ok Result: 2"); // panics
 }
 
 TEST(ResultTests, UnwrapErr) {
-  const result::Result<uint32_t, std::string> x = result::Ok(2U);
-  EXPECT_EXIT(static_cast<void>(x.unwrap_err()), ::testing::ExitedWithCode(EXIT_FAILURE), "Attempting to unwrap_err an Ok Result: 2"); // panics
-
-  const result::Result<uint32_t, std::string> y = result::Err("emergency failure"s);
-  EXPECT_EQ(y.unwrap_err(), "emergency failure");
+  const result::Result<uint32_t, std::string> x = result::Err("emergency failure"s);
+  EXPECT_EQ(x.unwrap_err(), "emergency failure");
 }
 
 TEST(ResultTests, UnwrapOr) {
