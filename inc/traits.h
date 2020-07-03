@@ -37,7 +37,8 @@ namespace traits {
    * \param enumerator
    * \return the value of enumerator
    */
-  template <typename E>
+  template<typename E, typename = std::enable_if_t<std::is_enum_v<E>>>
+  [[nodiscard]]
   constexpr auto toUType(E enumerator) noexcept {
     return static_cast<std::underlying_type_t<E>>(enumerator);
   }
