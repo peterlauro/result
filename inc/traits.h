@@ -1,5 +1,7 @@
-#ifndef __TRAITS_H
-#define __TRAITS_H
+#pragma once
+
+#ifndef TRAITS_H
+#define TRAITS_H
 
 #include <type_traits>
 
