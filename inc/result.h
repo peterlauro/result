@@ -537,19 +537,6 @@ namespace result {
     };
   }
 
-  template<
-    typename T,
-    typename CharT,
-    typename Traits,
-    typename = std::enable_if_t<std::is_enum_v<T>>>
-  std::basic_ostream<CharT, Traits>&
-  operator<<(std::basic_ostream<CharT, Traits>& os, T val) {
-    std::basic_ostringstream<CharT, Traits> s;
-    s.flags(os.flags());
-    s << traits::toUType(val);
-    return os << s.str();
-  }
-
   template<typename T, typename E>
   class Result final : private detail::default_ctor_base<T> {
     static_assert(!std::is_reference_v<T>, "T must not be a reference");
@@ -558,6 +545,8 @@ namespace result {
     using ctor_base = detail::default_ctor_base<T>;
 
   public:
+    using value_type = T;
+    using error_type = E;
     using storage_type = detail::Storage<T, E>;
     using storage_ctrl = detail::Storage_Ctrl<T, E>;
 
@@ -747,7 +736,7 @@ namespace result {
           return storage.template get<T>();
       }
 
-      std::cerr << msg << ": " << storage.template get<E>() << std::endl;
+      report_err<error_type>(msg);
       std::exit(EXIT_FAILURE);
     }
 
@@ -758,7 +747,7 @@ namespace result {
         return storage.template get<T>();
       }
 
-      std::cerr << msg << ": " << storage.template get<E>() << std::endl;
+      report_err<error_type>(msg);
       std::exit(EXIT_FAILURE);
     }
 
@@ -769,7 +758,7 @@ namespace result {
         return std::move(storage).template get<T>();
       }
 
-      std::cerr << msg << ": " << storage.template get<E>() << std::endl;
+      report_err<error_type>(msg);
       std::exit(EXIT_FAILURE);
     }
 
@@ -780,7 +769,7 @@ namespace result {
         return std::move(storage).template get<T>();
       }
 
-      std::cerr << msg << ": " << storage.template get<E>() << std::endl;
+      report_err<error_type>(msg);
       std::exit(EXIT_FAILURE);
     }
 
@@ -795,11 +784,7 @@ namespace result {
         return storage.template get<E>();
       }
 
-      if constexpr (!std::is_void_v<T>) {
-        std::cerr << msg << ": " << storage.template get<T>() << std::endl;
-      } else {
-        std::cerr << msg << std::endl;
-      }
+      report_err<value_type>(msg);
       std::exit(EXIT_FAILURE);
     }
 
@@ -808,11 +793,7 @@ namespace result {
         return storage.template get<E>();
       }
 
-      if constexpr (!std::is_void_v<T>) {
-        std::cerr << msg << ": " << storage.template get<T>() << std::endl;
-      } else {
-        std::cerr << msg << std::endl;
-      }
+      report_err<value_type>(msg);
       std::exit(EXIT_FAILURE);
     }
 
@@ -821,11 +802,7 @@ namespace result {
         return std::move(storage).template get<E>();
       }
 
-      if constexpr (!std::is_void_v<T>) {
-        std::cerr << msg << ": " << storage.template get<T>() << std::endl;
-      } else {
-        std::cerr << msg << std::endl;
-      }
+      report_err<value_type>(msg);
       std::exit(EXIT_FAILURE);
     }
 
@@ -834,11 +811,7 @@ namespace result {
         return std::move(storage).template get<E>();
       }
 
-      if constexpr (!std::is_void_v<T>) {
-        std::cerr << msg << ": " << storage.template get<T>() << std::endl;
-      } else {
-        std::cerr << msg << std::endl;
-      }
+      report_err<value_type>(msg);
       std::exit(EXIT_FAILURE);
     }
 
@@ -1089,7 +1062,7 @@ namespace result {
         return storage.template get<U>();
       }
 
-      std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+      report_err<error_type>("Attempting to unwrap an Err Result");
       std::exit(EXIT_FAILURE);
     }
 
@@ -1101,7 +1074,7 @@ namespace result {
         return storage.template get<U>();
       }
 
-      std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+      report_err<error_type>("Attempting to unwrap an Err Result");
       std::exit(EXIT_FAILURE);
     }
 
@@ -1113,7 +1086,7 @@ namespace result {
         return std::move(storage).template get<U>();
       }
 
-      std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+      report_err<error_type>("Attempting to unwrap an Err Result");
       std::exit(EXIT_FAILURE);
     }
 
@@ -1125,7 +1098,7 @@ namespace result {
         return std::move(storage).template get<T>();
       }
 
-      std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+      report_err<error_type>("Attempting to unwrap an Err Result");
       std::exit(EXIT_FAILURE);
     }
 
@@ -1133,7 +1106,7 @@ namespace result {
       requires_T(std::is_void_v<U> && std::is_same_v<U, T>)>
     void unwrap() & {
       if (is_err()) {
-        std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+        report_err<error_type>("Attempting to unwrap an Err Result");
         std::exit(EXIT_FAILURE);
       }
     }
@@ -1142,7 +1115,7 @@ namespace result {
       requires_T(std::is_void_v<U>&& std::is_same_v<U, T>)>
     void unwrap() const& {
       if (is_err()) {
-        std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+        report_err<error_type>("Attempting to unwrap an Err Result");
         std::exit(EXIT_FAILURE);
       }
     }
@@ -1151,7 +1124,7 @@ namespace result {
       requires_T(std::is_void_v<U>&& std::is_same_v<U, T>)>
     void unwrap() && {
       if (is_err()) {
-        std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+        report_err<error_type>("Attempting to unwrap an Err Result");
         std::exit(EXIT_FAILURE);
       }
     }
@@ -1160,7 +1133,7 @@ namespace result {
       requires_T(std::is_void_v<U>&& std::is_same_v<U, T>)>
     void unwrap() const&& {
       if (is_err()) {
-        std::cerr << "Attempting to unwrap an Err Result: " << storage.template get<E>() << std::endl;
+        report_err<error_type>("Attempting to unwrap an Err Result");
         std::exit(EXIT_FAILURE);
       }
     }
@@ -1176,11 +1149,7 @@ namespace result {
         return storage.template get<E>();
       }
 
-      if constexpr (!std::is_void_v<T>) {
-        std::cerr << "Attempting to unwrap_err an Ok Result: " << storage.template get<T>() << std::endl;
-      } else {
-        std::cerr << "Attempting to unwrap_err an Ok Result" << std::endl;
-      }
+      report_err<value_type>("Attempting to unwrap_err an Ok Result");
       std::exit(EXIT_FAILURE);
     }
 
@@ -1190,11 +1159,7 @@ namespace result {
         return storage.template get<E>();
       }
 
-      if constexpr (!std::is_void_v<T>) {
-        std::cerr << "Attempting to unwrap_err an Ok Result: " << storage.template get<T>() << std::endl;
-      } else {
-        std::cerr << "Attempting to unwrap_err an Ok Result" << std::endl;
-      }
+      report_err<value_type>("Attempting to unwrap_err an Ok Result");
       std::exit(EXIT_FAILURE);
     }
 
@@ -1204,11 +1169,7 @@ namespace result {
         return std::move(storage).template get<E>();
       }
 
-      if constexpr (!std::is_void_v<T>) {
-        std::cerr << "Attempting to unwrap_err an Ok Result: " << storage.template get<T>() << std::endl;
-      } else {
-        std::cerr << "Attempting to unwrap_err an Ok Result" << std::endl;
-      }
+      report_err<value_type>("Attempting to unwrap_err an Ok Result");
       std::exit(EXIT_FAILURE);
     }
 
@@ -1218,11 +1179,7 @@ namespace result {
         return std::move(storage).template get<E>();
       }
 
-      if constexpr (!std::is_void_v<T>) {
-        std::cerr << "Attempting to unwrap_err an Ok Result: " << storage.template get<T>() << std::endl;
-      } else {
-        std::cerr << "Attempting to unwrap_err an Ok Result" << std::endl;
-      }
+      report_err<value_type>("Attempting to unwrap_err an Ok Result");
       std::exit(EXIT_FAILURE);
     }
 
@@ -1334,6 +1291,19 @@ namespace result {
     }
 
   private:
+    template<typename U>
+    void report_err(const char* msg) const {
+      if constexpr (!std::is_void_v<U>) {
+        if constexpr (std::is_enum_v<U>) {
+          std::cerr << msg << ": " << traits::toUType(storage.template get<U>()) << std::endl;
+        } else {
+          std::cerr << msg << ": " << storage.template get<U>() << std::endl;
+        }
+      } else {
+        std::cerr << msg << std::endl;
+      }
+    }
+
     bool has_value{ true };
     storage_type storage;
   };
