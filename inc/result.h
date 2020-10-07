@@ -81,12 +81,10 @@ namespace result {
    * \param val success value
    * \return success value wrapper
    */
-  template<
-    typename T,
-    typename CleanT = std::decay_t<T>>
-  constexpr option_type::Ok<CleanT> Ok(T&& val)
-  noexcept(noexcept(option_type::Ok<CleanT>(std::forward<T>(val)))) {
-    return option_type::Ok<CleanT>(std::forward<T>(val));
+  template<typename T>
+  constexpr option_type::Ok<std::decay_t<T>> Ok(T&& val)
+  noexcept(noexcept(option_type::Ok<std::decay_t<T>>(std::forward<T>(val)))) {
+    return option_type::Ok<std::decay_t<T>>(std::forward<T>(val));
   }
 
   template<
@@ -113,12 +111,10 @@ namespace result {
    * \param val error value
    * \return error value wrapper
    */
-  template<
-    typename E,
-    typename CleanE = std::decay_t<E>>
-  constexpr option_type::Err<CleanE> Err(E&& val)
-  noexcept(noexcept(option_type::Err<CleanE>(std::forward<E>(val)))) {
-    return option_type::Err<CleanE>(std::forward<E>(val));
+  template<typename E>
+  constexpr option_type::Err<std::decay_t<E>> Err(E&& val)
+  noexcept(noexcept(option_type::Err<std::decay_t<E>>(std::forward<E>(val)))) {
+    return option_type::Err<std::decay_t<E>>(std::forward<E>(val));
   }
 
   template<
@@ -1416,32 +1412,5 @@ namespace result {
     return r != err;
   }
 }
-
-#if defined(__GNUC__) || defined(__clang__)
-/**
- * \brief
- * \remark http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0779r0.pdf
- */
-#define TRYX_MOVE(...)                                      \
-  ({                                                   \
-    auto&& res = (__VA_ARGS__);                        \
-    if (res.is_err()) {                                \
-      return result::Err(std::move(res).unwrap_err()); \
-    }                                                  \
-    std::move(res).unwrap();                           \
-  })
-
-#define TRYX_COPY(...)                                 \
-  ({                                                   \
-    auto&& res = (__VA_ARGS__);                        \
-    if (res.is_err()) {                                \
-      return result::Err(res.unwrap_err());            \
-    }                                                  \
-    res.unwrap();                                      \
-  })
-
-#define TRYX(...) TRYX_MOVE(__VA_ARGS__)
-
-#endif
 
 #endif
