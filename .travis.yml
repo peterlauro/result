@@ -1,19 +1,62 @@
 language: cpp
-os: linux
-dist: bionic
 
 matrix:
   include:
-   - compiler: gcc
+    - name: "Bionic Clang (clang 9.0.0)"
+      os: linux
+      dist: bionic
+      compiler: clang
+      addons:
+        apt:
+          sources:
+            - sourceline: 'ppa:ubuntu-toolchain-r/test'
+            - sourceline: 'deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-9 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - g++-9
+            - clang-9
+      env:
+        - MATRIX_EVAL="CC=clang-9 && CXX=clang++-9"
 
-   - compiler: clang
+    - name: "Bionic GNU G++ (g++ 9.3.0)"
+      os: linux
+      dist: bionic
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - sourceline: 'ppa:ubuntu-toolchain-r/test'
+          packages:
+            - g++-9
+      env:
+        - MATRIX_EVAL="CC=gcc-9 && CXX=g++-9"
 
-before_script:
-  - ${CXX} --version
+    - name: "Visual Studio 2017 CMake (MSBuild)"
+      os: windows
+      env:
+        - MSBUILD_PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin"
+      script:
+        - export PATH=$MSBUILD_PATH:$PATH
+        - mkdir -p build && cd build
+        - cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Debug ..
+        - MsBuild.exe result.sln
+        - ctest -C Debug -V --output-on-failure
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then eval "${MATRIX_EVAL}"; fi
+
+install:
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      echo ${CC};
+      echo ${CXX};
+      ${CXX} --version;
+      cmake --version;
+    fi
 
 script:
   - mkdir -p build && cd build
-  - cmake -DCMAKE_CXX_COMPILER=${CXX} ..
+  - cmake -DCMAKE_CXX_COMPILER=${CXX} -DCMAKE_BUILD_TYPE=Debug ..
   - make clean && make -k
-  - cd test
-  - ctest -V --output-on-failure
+  - ctest -C Debug -V --output-on-failure
+
